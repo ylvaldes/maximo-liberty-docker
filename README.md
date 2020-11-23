@@ -2,7 +2,7 @@
 
 Maximo with Liberty on Docker enables to run Maximo Asset Management with WebSphere Liberty on Docker. The images are deployed fine-grained services instead of a single instance. The following instructions describe how to set up IBM Maximo Asset Management V7.6 Docker images. These images consist of several components e.g. WebSphere Liberty, Db2, and Maximo installation program.
 
-Before you start, please check the official guide in technotes first. [Maximo Asset Management 7.6.1 WebSphere Liberty Support](https://www-01.ibm.com/support/docview.wss?uid=swg22017219)
+Before you start, learn more about Maximo WebSphere Liberty support from the official documentation. [Maximo Asset Management 7.6.1 WebSphere Liberty Support](https://www.ibm.com/support/pages/node/572105)
 
 ![Componets of Docker Images](https://raw.githubusercontent.com/nishi2go/maximo-liberty-docker/master/maximo-liberty-docker.svg?sanitize=true)
 
@@ -26,8 +26,8 @@ Before you start, please check the official guide in technotes first. [Maximo As
 
 * Feature Pack/Fix Pack binaries from [Fix Central](http://www-945.ibm.com/support/fixcentral/)
 
-  IBM Maximo Asset Management V7.6.1 Feature pack 1 binary:
-  * MAMMTFP7611IMRepo.zip
+  IBM Maximo Asset Management V7.6.1 Feature pack 2 binary:
+  * MAMMTFP7612IMRepo.zip
 
   IBM Db2 Server V11.1 Fix Pack 4 Mod 1
   * v11.1.4fp4a_linuxx64_server_t.tar.gz
@@ -44,12 +44,16 @@ Usage: build.sh [OPTIONS]
 
 Build Maximo Docker containers.
 
--r | --remove           Remove images when an image exists in repository
--R | --remove-only      Remove images without building when an image exists in repository
--c | --use-custom-image Build a custom image for Maximo installation container
--v | --verbose          Output verbosity in docker build
--s | --skip-db          Skip to build and remove a maxdb image
--h | --help             Show this help textt
+-r  | --remove                 Remove images when an image exists in repository.
+-R  | --remove-only            Remove images without building when an image exists in repository.
+-rt | --remove-latest-tag      Do not add the "letest" tag to the built images.
+-c  | --use-custom-image       Build a custom image for Maximo installation container.
+-v  | --verbose                Show detailed output of the docker build.
+-p  | --prune                  Remove intermediate multi-stage builds automatically.
+-s  | --skip-db                Skip building and removing a DB image.
+--push-registry=REGISTRY_URL   Push the built images to a specified remote Docker registry.
+--namespace=NAMESPACE          Specify the namespace of the Docker images (default: maximo-liberty).
+-h  | --help                   Show this help text.
 ```
 
 Procedures:
@@ -68,7 +72,7 @@ Procedures:
     wlp-nd-license.jar
     DB2_AWSE_REST_Svr_11.1_Lnx_86-64.tar.gz
     IED_V1.8.8_Wins_Linux_86.zip
-    MAMMTFP7611IMRepo.zip
+    MAMMTFP7612IMRepo.zip
     v11.1.4fp4a_linuxx64_server_t.tar.gz
     ```
 3. Run the build tool
@@ -94,9 +98,13 @@ Procedures:
     ```
 6. Make sure to be accessible to Maximo login page: http://hostname/maximo
 
+## How to deploy Maximo on Kuberenetes
+
+See the [Maximo on Kubernetes](https://github.com/nishi2go/maximo-liberty-docker/blob/master/kubernetes/README.md) document.
+
 ## How to use a custom build image.
 
-To install industry solutions e.g. Oil & Gas, Service Providers and the other offerings, you can use a custom Maximo dockerfile which aims to extend the original Maximo installation container. A sample script ``` custom/Dockerfile ``` allows to run IBM Installation Manager, unzip Interim Fixes and/or etc at a build time. You can find a Maximo for Oil & Gas sample in the dockerfile. Please uncomment the section in the file to install the Maximo for Oil & Gas V7.6.1 onto Maximo Asset Management V7.6.1.1.
+To install industry solutions e.g. Oil & Gas, Service Providers and the other offerings, you can use a custom Maximo dockerfile which aims to extend the original Maximo installation container. A sample script ``` custom/Dockerfile ``` allows to run IBM Installation Manager, unzip Interim Fixes and/or etc at a build time. You can find a Maximo for Oil & Gas sample in the dockerfile. Please uncomment the section in the file to install the Maximo for Oil & Gas V7.6.1 onto Maximo Asset Management V7.6.1.2.
 
 #### Sample steps to install Maximo for Oil and Gas Industry Solution.
 
@@ -202,5 +210,6 @@ docker-compose exec maxdb /work/db2/backup.sh maxdb76 /backup
 Note: There must be one file in the directory. The restore task will fail when more than two images in it.
 
 ## To do
-1. Kubernetes (OpenShift)
-2. Password with Docker secrets
+1. Helm support
+2. Industry Solution templates
+3. Oracle Database support

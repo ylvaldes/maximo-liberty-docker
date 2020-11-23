@@ -1,22 +1,15 @@
 version: '3.6'
 services:
   maxdb:
-    image: maximo-liberty/db2
-    hostname: "${ENV_DB_HOST_NAME}"
+    image: maximo-liberty/db2:7.6.1.2
+    hostname: "${ENV_MAXDB_SERVICE_HOST}"
     environment:
       - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
-      - "DB_PORT=${ENV_DB_PORT}"
+      - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
     networks:
       - backend
     ports:
-      - "${ENV_DB_PORT}:${ENV_DB_PORT}"
-    volumes:
-      - type: volume
-        source: maxdb76
-        target: /data
-#      - type: bind
-#        source: ./backup
-#        target: /backup
+      - "${ENV_MAXDB_SERVICE_PORT}:${ENV_MAXDB_SERVICE_PORT}"
     ulimits:
       nproc: 8192
       nofile: 65535
@@ -27,93 +20,116 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    volumes:
+      - type: volume
+        source: maxdb76
+        target: /home/ctginst1/ctginst1
+#      - type: bind
+#        source: ./backup
+#        target: /backup
   
-#  maximo:
-#    image: maximo-liberty/maximo
-#    environment:
-#      - MXINTADM_PASSWORD=changeit
-#      - MAXADMIN_PASSWORD=changeit
-#      - MAXREG_PASSWORD=changeit
-#      - "DB_PORT=${ENV_DB_PORT}"
-#      - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
-#      - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
-#      - BASE_LANG=en
-#      - ADD_LANGS=de,fr,ja
-#      - ADMIN_EMAIL_ADDRESS=root@localhost
-#      - SMTP_SERVER_HOST_NAME=localhost
-#      - SKIN=iot18
-#      - UPDATE_APPS_ON_REBOOT=yes
-#      - KEEP_RUNNING=yes
-#      - ENABLE_DEMO_DATA=no
-#    depends_on:
-#      - maxdb
-#    networks:
-#      - backend
-#    volumes:
-#      - maximo:/maximo
+  # maximo:
+  #   image: maximo-liberty/maximo:7.6.1.2
+  #   environment:
+  #     - MXINTADM_PASSWORD=changeit
+  #     - MAXADMIN_PASSWORD=changeit
+  #     - MAXREG_PASSWORD=changeit
+  #     - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+  #     - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
+  #     - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
+  #     - BASE_LANG=en
+  #     - ADD_LANGS=de,fr,ja
+  #     - ADMIN_EMAIL_ADDRESS=root@localhost
+  #     - SMTP_SERVER_HOST_NAME=localhost
+  #     - SKIN=iot18
+  #     - UPDATE_APPS_ON_REBOOT=yes
+  #     - KEEP_RUNNING=yes
+  #     - ENABLE_DEMO_DATA=no
+  #   depends_on:
+  #     - maxdb
+  #   networks:
+  #     - backend
+  #   volumes:
+  #     - maximo:/maximo
 
   maximo-ui:
-    image: maximo-liberty/maximo-ui
+    image: maximo-liberty/maximo-ui:7.6.1.2
     environment:
-      - "DB_PORT=${ENV_DB_PORT}"
-      - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
+      - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+      - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
       - GEN_MAXIMO_PROPERTIES=yes
       - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
       - "ADMIN_USER_NAME=${ENV_ADMIN_USER_NAME}"
       - "ADMIN_PASSWORD=${ENV_ADMIN_PASSWORD}"
       - LICENSE=accept
-      - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-      - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
+      - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+      - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
       - WLP_LOGGING_CONSOLE_LOGLEVEL=info
+      - MXE_CRONTASK_DONOTRUN=ALL
+    ports:
+      - "9080:9080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=maximo-docker-liberty_frontend"
+      - "traefik.http.routers.maximo-ui.entrypoints=web"
+      - "traefik.http.services.maximo-ui.loadbalancer.server.port=9080"
+      - "traefik.http.routers.maximo-ui.rule=PathPrefix(`/maximo`) || PathPrefix(`/maximo-x`)"
     depends_on:
       - maxdb
-#      - maximo
       - jmsserver
     networks:
       frontend:
         aliases:
           - maximo-ui
       backend:
-    volumes:
-      - maximo:/maximo
+  #   volumes:
+  #     - maximo:/maximo
 
   maximo-cron:
-    image: maximo-liberty/maximo-cron
+    image: maximo-liberty/maximo-cron:7.6.1.2
     environment:
-      - "DB_PORT=${ENV_DB_PORT}"
-      - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
+      - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+      - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
       - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
       - GEN_MAXIMO_PROPERTIES=yes
       - "ADMIN_USER_NAME=${ENV_ADMIN_USER_NAME}"
       - "ADMIN_PASSWORD=${ENV_ADMIN_PASSWORD}"
       - LICENSE=accept
-      - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-      - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
+      - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+      - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
     depends_on:
       - maxdb
-#      - maximo
       - jmsserver
     networks:
       frontend:
       backend:
-    volumes:
-      - maximo:/maximo
+  #   volumes:
+  #     - maximo:/maximo
+
 
   # maximo-api:
-  #   image: maximo-liberty/maximo-api
+  #   image: maximo-liberty/maximo-api:7.6.1.2
   #   environment:
-  #     - "DB_PORT=${ENV_DB_PORT}"
-  #     - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
+  #     - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+  #     - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
   #     - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
   #     - GEN_MAXIMO_PROPERTIES=yes
   #     - "ADMIN_USER_NAME=${ENV_ADMIN_USER_NAME}"
   #     - "ADMIN_PASSWORD=${ENV_ADMIN_PASSWORD}"
   #     - LICENSE=accept
-  #     - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-  #     - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
+  #     - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+  #     - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
+  #     - MXE_CRONTASK_DONOTRUN=ALL
+  #   ports:
+  #     - "9081:9081"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=maximo-docker-liberty_frontend"
+  #     - "traefik.http.routers.maximo-api.entrypoints=web"
+  #     - "traefik.http.services.maximo-api.loadbalancer.server.port=9081"
+  #     - "traefik.http.routers.maximo-api.rule=PathPrefix(`/maximoapi`)"
   #   depends_on:
   #     - maxdb
-  #     - maximo
   #     - jmsserver
   #   networks:
   #     frontend:
@@ -124,20 +140,28 @@ services:
   #     - maximo:/maximo
 
   # maximo-report:
-  #   image: maximo-liberty/maximo-report
+  #   image: maximo-liberty/maximo-report:7.6.1.2
   #   environment:
-  #     - "DB_PORT=${ENV_DB_PORT}"
-  #     - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
+  #     - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+  #     - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
   #     - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
   #     - GEN_MAXIMO_PROPERTIES=yes
   #     - "ADMIN_USER_NAME=${ENV_ADMIN_USER_NAME}"
   #     - "ADMIN_PASSWORD=${ENV_ADMIN_PASSWORD}"
   #     - LICENSE=accept
-  #     - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-  #     - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
+  #     - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+  #     - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
+  #     - MXE_CRONTASK_DONOTRUN=ALL
+  #   ports:
+  #     - "9082:9081"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=maximo-docker-liberty_frontend"
+  #     - "traefik.http.routers.maximo-report.entrypoints=web"
+  #     - "traefik.http.services.maximo-report.loadbalancer.server.port=9082"
+  #     - "traefik.http.routers.maximo-report.rule=PathPrefix(`/maximoreport`)"
   #   depends_on:
   #     - maxdb
-  #     - maximo
   #     - jmsserver
   #   networks:
   #     frontend:
@@ -148,44 +172,60 @@ services:
   #     - maximo:/maximo
 
   # maximo-mea:
-  #   image: maximo-liberty/maximo-mea
+  #   image: maximo-liberty/maximo-mea:7.6.1.2
   #   environment:
-  #     - "DB_PORT=${ENV_DB_PORT}"
-  #     - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
+  #     - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+  #     - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
   #     - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
   #     - GEN_MAXIMO_PROPERTIES=yes
   #     - "ADMIN_USER_NAME=${ENV_ADMIN_USER_NAME}"
   #     - "ADMIN_PASSWORD=${ENV_ADMIN_PASSWORD}"
   #     - LICENSE=accept
-  #     - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-  #     - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
+  #     - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+  #     - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
+  #     - MXE_CRONTASK_DONOTRUN=ALL
+  #   ports:
+  #     - "9084:9084"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=maximo-docker-liberty_frontend"
+  #     - "traefik.http.routers.maximo-mea.entrypoints=web"
+  #     - "traefik.http.services.maximo-mea.loadbalancer.server.port=9084"
+  #     - "traefik.http.routers.maximo-mea.rule=PathPrefix(`/meaweb`)"
   #   depends_on:
   #     - maxdb
-  #     - maximo
   #     - jmsserver
   #   networks:
-  #    frontend:
-  #      aliases:
+  #     frontend:
+  #       aliases:
   #        - maximo-mea
   #     backend:
   #   volumes:
   #     - maximo:/maximo
 
   # maximo-jmsconsumer:
-  #   image: maximo-liberty/maximo-jmsconsumer
+  #   image: maximo-liberty/maximo-jmsconsumer:7.6.1.2
   #   environment:
-  #     - "DB_PORT=${ENV_DB_PORT}"
-  #     - "DB_HOST_NAME=${ENV_DB_HOST_NAME}"
+  #     - "MAXDB_SERVICE_PORT=${ENV_MAXDB_SERVICE_PORT}"
+  #     - "MAXDB_SERVICE_HOST=${ENV_MAXDB_SERVICE_HOST}"
   #     - "DB_MAXIMO_PASSWORD=${ENV_DB_MAXIMO_PASSWORD}"
   #     - GEN_MAXIMO_PROPERTIES=yes
   #     - "ADMIN_USER_NAME=${ENV_ADMIN_USER_NAME}"
   #     - "ADMIN_PASSWORD=${ENV_ADMIN_PASSWORD}"
   #     - LICENSE=accept
-  #     - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-  #     - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
+  #     - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+  #     - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
+  #     - MXE_CRONTASK_DONOTRUN=ALL
+  #   ports:
+  #     - "9083:9083"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=maximo-docker-liberty_frontend"
+  #     - "traefik.http.routers.maximo-jmsconsumer.entrypoints=web"
+  #     - "traefik.http.services.maximo-jmsconsumer.loadbalancer.server.port=9083"
+  #     - "traefik.http.routers.maximo-jmsconsumer.rule=PathPrefix(`/maximojmsconsumer`)"
   #   depends_on:
   #     - maxdb
-  #     - maximo
   #     - jmsserver
   #   networks:
   #     frontend:
@@ -196,25 +236,40 @@ services:
   #     - maximo:/maximo
 
   jmsserver:
-    image: maximo-liberty/jmsserver
+    image: maximo-liberty/jmsserver:20.0.0.3-kernel-java8-ibmjava
     environment:
       - LICENSE=accept
-      - "JMS_SERVER_HOST=${ENV_JMS_SERVER_HOST}"
-      - "JMS_SERVER_PORT=${ENV_JMS_SERVER_PORT}"
-      - "JMS_SERVER_SSL_PORT=${ENV_JMS_SERVER_SSL_PORT}"
-    hostname: "${ENV_JMS_SERVER_HOST}"
+      - "MAXIMO_JMS_SERVICE_HOST=${ENV_MAXIMO_JMS_SERVICE_HOST}"
+      - "MAXIMO_JMS_SERVICE_PORT=${ENV_MAXIMO_JMS_SERVICE_PORT}"
+      - "MAXIMO_JMS_SERVICE_SSL_PORT=${ENV_MAXIMO_JMS_SERVICE_SSL_PORT}"
+    hostname: "${ENV_MAXIMO_JMS_SERVICE_HOST}"
     ports:
-      - "${ENV_JMS_SERVER_PORT}:${ENV_JMS_SERVER_PORT}"
-      - "${ENV_JMS_SERVER_SSL_PORT}:${ENV_JMS_SERVER_SSL_PORT}"
+      - "${ENV_MAXIMO_JMS_SERVICE_PORT}:${ENV_MAXIMO_JMS_SERVICE_PORT}"
+      - "${ENV_MAXIMO_JMS_SERVICE_SSL_PORT}:${ENV_MAXIMO_JMS_SERVICE_SSL_PORT}"
     networks:
       - frontend
 
+  # frontend-proxy:
+  #   image: maximo-liberty/frontend-proxy:1.8
+  #   ports:
+  #     - 80:80
+  #   depends_on:
+  #     - maximo-ui
+  #   networks:
+  #     - frontend
+
   frontend-proxy:
-    image: maximo-liberty/frontend-proxy
+    image: traefik:v2.2 # The official v2 Traefik docker image
     ports:
-      - 80:80
-    depends_on:
-      - maximo-ui
+      - "80:80"
+    command:
+      # - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - frontend
 

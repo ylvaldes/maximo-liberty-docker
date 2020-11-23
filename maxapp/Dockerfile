@@ -9,8 +9,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-ARG buildver=7.6.1.1
-ARG libertyver=19.0.0.6-webProfile8
+ARG buildver=7.6.1.2
+ARG libertyver=20.0.0.3-kernel-java8-ibmjava
 FROM maximo-liberty/maximo:${buildver}
 FROM maximo-liberty/liberty:${libertyver}
 
@@ -31,19 +31,26 @@ RUN chmod 555 /opt/ibm/docker/start.sh
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh \
     && mv wait-for-it.sh /usr/local/bin && chmod +x /usr/local/bin/wait-for-it.sh
 
+RUN mkdir -p ${MAXIMO_DIR} && chown -R 1001.0 ${MAXIMO_DIR}
 RUN chown -R 1001.0 /config
 RUN touch /config/maximo.properties && chown 1001.0 /config/maximo.properties && chmod 640 /config/maximo.properties
 USER 1001
-COPY --chown=1001:0 maximo.properties.template /config/
+COPY --chown=1001:0 maximo.properties.template ${MAXIMO_DIR}
+
+# Default setting for the verbose option
+ARG VERBOSE=false
+
+# This script will add the requested XML snippets, grow image to be fit-for-purpose and apply interim fixes
+RUN configure.sh
 
 ENV ADMIN_USER_NAME=admin
 ENV ADMIN_PASSWORD=changeit
-ENV JMS_SERVER_HOST=jmsserver
-ENV JMS_SERVER_PORT=9011
+ENV MAXIMO_JMS_SERVICE_HOST=jmsserver
+ENV MAXIMO_JMS_SERVICE_PORT=7276
 ENV GEN_MAXIMO_PROPERTIES=yes
 ENV DB_MAXIMO_PASSWORD=changeit
-ENV DB_HOST_NAME=maxdb
-ENV DB_PORT=50005
+ENV MAXDB_SERVICE_HOST=maxdb
+ENV MAXDB_SERVICE_PORT=50005
 ENV MAXDB=maxdb76
 #ENV JVM_HEAP_MAX_SIZE=4092m
 #ENV JVM_HEAP_MIN_SIZE=512m

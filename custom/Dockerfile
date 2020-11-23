@@ -12,7 +12,7 @@
 
 # The script is used for customizing Maximo image e.g. to install Industry Solutions, your custom java classes and etc.
 
-ARG buildver=7.6.1.1
+ARG buildver=7.6.1.2
 
 FROM maximo-liberty/images:${buildver}
 
@@ -30,5 +30,6 @@ FROM maximo-liberty/maximo-base:${buildver}
 # -installationDirectory /opt/IBM/SMP -acceptLicense && rm -rf /work/oag/*
 #COPY --from=0 /images/OG7610_ifixes.20200316-0706.zip /work/oag/
 #RUN unzip -o OG7610_ifixes.20200316-0706.zip -d /opt/IBM/SMP/maximo/ && rm -rf /work/oag/*
+
 
 RUN /work/buildwars.sh
