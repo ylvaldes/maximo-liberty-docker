@@ -11,7 +11,9 @@
 # limitations under the License.
 ARG buildver=7.6.1.2
 ARG libertyver=20.0.0.3-kernel-java8-ibmjava
-FROM maximo-liberty/images:${buildver}
+ARG namespace=maximo-liberty
+
+FROM ${namespace}/images:${buildver}
 FROM websphere-liberty:${libertyver}
 
 LABEL maintainer="nishi2go@gmail.com"
@@ -31,3 +33,4 @@ RUN java -jar /tmp/wlp-nd-license.jar --acceptLicense /opt/ibm \
  && rm /tmp/wlp-nd-license.jar
 
 ENV KEYSTORE_REQUIRED false
+ENV SEC_TLS_TRUSTDEFAULTCERTS true
